@@ -26,8 +26,11 @@ def circle(w,h,r):
                 img[i,j] = 1
     return img.flatten()
 
-def image(pathname):
-    f = np.asarray(Image.open(pathname).convert('L'))
+def image(pathname, box=None):
+    img = Image.open(pathname).convert('L')
+    if box != None:
+        img = img.crop(box)
+    f = np.asarray(img)
     w = np.size(f,1)
     h = np.size(f,0)
     f = f / 255

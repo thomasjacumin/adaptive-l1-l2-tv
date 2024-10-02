@@ -14,6 +14,8 @@ import runners
 # Parse parameters
 parser = argparse.ArgumentParser(description="sample argument parser")
 parser.add_argument("g", help="input image")
+parser.add_argument("--crop", action=argparse.BooleanOptionalAction, help="crop the input images to have length of a power of 2")
+parser.add_argument("--g-out", nargs='?', help="g")
 parser.add_argument("--noisy-out", nargs='?', help="noisy image")
 parser.add_argument("--out", nargs='?', help="image")
 parser.add_argument("--sigma", nargs='?', type=float, default=0., help="noise level (std deviation)")
@@ -36,6 +38,14 @@ np.random.seed(0)
 
 # Create data
 g, w, h = data.image(args.g)
+N = min( int(np.log2(w)), int(np.log2(h)) )
+if args.crop:
+    box = (int(w/2)-2**(N-1), int(h/2)-2**(N-1), int(w/2)+2**(N-1), int(h/2)+2**(N-1))
+    g, w, h = data.image(args.g, box)
+if args.g_out:
+    print("Saving input image...")
+    Image.fromarray( (255*np.clip(g, 0, 1)).astype(np.uint8).reshape([h,w]) ).save(args.g_out)
+
 if args.sigma > 0:
     noise = np.random.normal(loc=0.0, scale=args.sigma, size=w*h)
     g = g + noise

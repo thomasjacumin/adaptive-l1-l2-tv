@@ -44,14 +44,14 @@ run__denoising() {
                 # sigma = 0.1
                 ## Uniform
                 if [ ! -f "results/denoising/$input/.out.0.1.unif.sucess" ]; then
-                    python3 denoising.py $g --noisy-out=results/denoising/$input/noisy.0.1.png --out=results/denoising/$input/unif.0.1.png --save-benchmark=results/denoising/$input/unif.0.1.benchmark.txt --sigma=0.1 \
+                    python3 denoising.py $g --crop --g-out=results/denoising/$input/g.png --noisy-out=results/denoising/$input/noisy.0.1.png --out=results/denoising/$input/unif.0.1.png --save-benchmark=results/denoising/$input/unif.0.1.benchmark.txt --sigma=0.1 \
                         --beta=0 --lambdaa=1 --alpha2=10 --gamma1=2e-4 --gamma2=2e-4 \
                         --algo-max-it=100
                     touch results/denoising/$input/.out.0.1.unif.sucess
                 fi
                 ## Coarse-to-fine
                 if [ ! -f "results/denoising/$input/.out.0.1.ctf.sucess" ]; then
-                    python3 denoising.py $g --noisy-out=results/denoising/$input/noisy.0.1.png --out=results/denoising/$input/ctf.0.1.png --save-benchmark=results/denoising/$input/ctf.0.1.benchmark.txt --sigma=0.1 \
+                    python3 denoising.py $g --crop --g-out=results/denoising/$input/g.png --noisy-out=results/denoising/$input/noisy.0.1.png --out=results/denoising/$input/ctf.0.1.png --save-benchmark=results/denoising/$input/ctf.0.1.benchmark.txt --sigma=0.1 \
                         --beta=0 --lambdaa=1 --alpha2=10 --gamma1=2e-4 --gamma2=2e-4 \
                         --N-refine=6 --algo-max-it=100
                     touch results/denoising/$input/.out.0.1.ctf.sucess
@@ -60,14 +60,14 @@ run__denoising() {
                 # sigma = 0.05
                 ## Uniform
                 if [ ! -f "results/denoising/$input/.out.0.05.unif.sucess" ]; then
-                    python3 denoising.py $g --noisy-out=results/denoising/$input/noisy.0.05.png --out=results/denoising/$input/unif.0.05.png --save-benchmark=results/denoising/$input/unif.0.05.benchmark.txt --sigma=0.05 \
+                    python3 denoising.py $g --crop --g-out=results/denoising/$input/g.png --noisy-out=results/denoising/$input/noisy.0.05.png --out=results/denoising/$input/unif.0.05.png --save-benchmark=results/denoising/$input/unif.0.05.benchmark.txt --sigma=0.05 \
                         --beta=0 --lambdaa=1 --alpha2=10 --gamma1=2e-4 --gamma2=2e-4 \
                         --algo-max-it=100
                     touch results/denoising/$input/.out.0.05.unif.sucess
                 fi
                 ## Coarse-to-fine
                 if [ ! -f "results/denoising/$input/.out.0.05.ctf.sucess" ]; then
-                    python3 denoising.py $g --noisy-out=results/denoising/$input/noisy.0.05.png --out=results/denoising/$input/ctf.0.05.png --save-benchmark=results/denoising/$input/ctf.0.05.benchmark.txt --sigma=0.05 \
+                    python3 denoising.py $g --crop --g-out=results/denoising/$input/g.png --noisy-out=results/denoising/$input/noisy.0.05.png --out=results/denoising/$input/ctf.0.05.png --save-benchmark=results/denoising/$input/ctf.0.05.benchmark.txt --sigma=0.05 \
                         --beta=0 --lambdaa=1 --alpha2=10 --gamma1=2e-4 --gamma2=2e-4 \
                         --N-refine=6 --algo-max-it=100
                     touch results/denoising/$input/.out.0.05.ctf.sucess
@@ -76,14 +76,14 @@ run__denoising() {
                 # sigma = 0.01
                 ## Uniform
                 if [ ! -f "results/denoising/$input/.out.0.01.unif.sucess" ]; then
-                    python3 denoising.py $g --noisy-out=results/denoising/$input/noisy.0.01.png --out=results/denoising/$input/unif.0.01.png --save-benchmark=results/denoising/$input/unif.0.01.benchmark.txt --sigma=0.01 \
+                    python3 denoising.py $g --crop --g-out=results/denoising/$input/g.png --noisy-out=results/denoising/$input/noisy.0.01.png --out=results/denoising/$input/unif.0.01.png --save-benchmark=results/denoising/$input/unif.0.01.benchmark.txt --sigma=0.01 \
                         --beta=0 --lambdaa=1 --alpha2=10 --gamma1=2e-4 --gamma2=2e-4 \
                         --algo-max-it=100
                     touch results/denoising/$input/.out.0.01.unif.sucess
                 fi
                 ## Coarse-to-fine
                 if [ ! -f "results/denoising/$input/.out.0.01.ctf.sucess" ]; then
-                    python3 denoising.py $g --noisy-out=results/denoising/$input/noisy.0.01.png --out=results/denoising/$input/ctf.0.01.png --save-benchmark=results/denoising/$input/ctf.0.01.benchmark.txt --sigma=0.01 \
+                    python3 denoising.py $g --crop --g-out=results/denoising/$input/g.png --noisy-out=results/denoising/$input/noisy.0.01.png --out=results/denoising/$input/ctf.0.01.png --save-benchmark=results/denoising/$input/ctf.0.01.benchmark.txt --sigma=0.01 \
                         --beta=0 --lambdaa=1 --alpha2=10 --gamma1=2e-4 --gamma2=2e-4 \
                         --N-refine=6 --algo-max-it=100
                     touch results/denoising/$input/.out.0.01.ctf.sucess
