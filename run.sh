@@ -110,24 +110,24 @@ run__opticalflow() {
                 ./bin/color_flow $ground_truth results/optical-flow/$input/flow10.png $normalizing
                 echo "optical flow will be normalize by ${normalizing}"
     
-                # L1
-                if [ ! -f "results/optical-flow/$input/.out.l1.sucess" ]; then
-                    python3 optical_flow.py $frame10 $frame11 --ground-truth=$ground_truth --out=results/optical-flow/$input/l1.flo --normalize --save-benchmark=results/optical-flow/$input/l1.benchmark.txt \
-                    --beta=1e-5 --alpha1=3 --lambdaa=1 --gamma1=2e-4 --gamma2=2e-4 \
-                    --algo=newton --algo-epsilon=1e-3 --algo-max-it=100 --algo-theta=1
-                    ./bin/color_flow results/optical-flow/$input/l1.flo results/optical-flow/$input/l1.png $normalizing
-                    touch results/optical-flow/$input/.out.l1.sucess
-                fi
+                # # L1
+                # if [ ! -f "results/optical-flow/$input/.out.l1.sucess" ]; then
+                #     python3 optical_flow.py $frame10 $frame11 --ground-truth=$ground_truth --out=results/optical-flow/$input/l1.flo --normalize --save-benchmark=results/optical-flow/$input/l1.benchmark.txt \
+                #     --beta=1e-5 --alpha1=3 --lambdaa=1 --gamma1=2e-4 --gamma2=2e-4 \
+                #     --algo=newton --algo-epsilon=1e-3 --algo-max-it=100 --algo-theta=1
+                #     ./bin/color_flow results/optical-flow/$input/l1.flo results/optical-flow/$input/l1.png $normalizing
+                #     touch results/optical-flow/$input/.out.l1.sucess
+                # fi
 
-                # warping
-                if [ ! -f "results/optical-flow/$input/.out.warp.sucess" ]; then
-                    python3 optical_flow.py $frame10 $frame11 --ground-truth=$ground_truth --out=results/optical-flow/$input/warp.flo --normalize --save-benchmark=results/optical-flow/$input/warp.benchmark.txt \
-                    --beta=1e-5 --alpha1=3 --lambdaa=1 --gamma1=2e-4 --gamma2=2e-4 \
-                    --algo=newton --algo-epsilon=1e-3 --algo-max-it=100 --algo-theta=1 \
-                    --warp --warp-epsilon=1e-2 --warp-max-it=100
-                    ./bin/color_flow results/optical-flow/$input/warp.flo results/optical-flow/$input/warp.png $normalizing
-                    touch results/optical-flow/$input/.out.warp.sucess
-                fi
+                # # warping
+                # if [ ! -f "results/optical-flow/$input/.out.warp.sucess" ]; then
+                #     python3 optical_flow.py $frame10 $frame11 --ground-truth=$ground_truth --out=results/optical-flow/$input/warp.flo --normalize --save-benchmark=results/optical-flow/$input/warp.benchmark.txt \
+                #     --beta=1e-5 --alpha1=3 --lambdaa=1 --gamma1=2e-4 --gamma2=2e-4 \
+                #     --algo=newton --algo-epsilon=1e-3 --algo-max-it=100 --algo-theta=1 \
+                #     --warp --warp-epsilon=1e-2 --warp-max-it=100
+                #     ./bin/color_flow results/optical-flow/$input/warp.flo results/optical-flow/$input/warp.png $normalizing
+                #     touch results/optical-flow/$input/.out.warp.sucess
+                # fi
 
                 # warping while c-t-f
                 if [ ! -f "results/optical-flow/$input/.out.ours.sucess" ]; then

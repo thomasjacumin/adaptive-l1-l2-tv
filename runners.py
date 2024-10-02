@@ -229,9 +229,14 @@ class AllInOneRunner(object):
         view = quadmesh.QuadMeshLeafView(self.w, self.h, int(w/2**self.NRef), int(h/2**self.NRef))
         view.create()
         view.computeIndices()
+
+        elements = view.getElements()
+        dofs = len(elements)
         
         print("compute projections from image to mesh...")
         P = projection.projectionMatrix(viewImage, view)
+        PInv = projection.projectionMatrix(view, viewImage)
+        PInv2N = bmat([ [ PInv, sparse.csr_matrix((w*h, dofs)) ], [ sparse.csr_matrix((w*h, dofs)), PInv ] ])
         # copy model
         model = models.L1L2TVModel()
         model.alpha1  = P@self.model.alpha1
@@ -248,8 +253,6 @@ class AllInOneRunner(object):
         NRef = 0
         viewPrev = 0        
         while True:
-            elements = view.getElements()
-            dofs = len(elements)
             print("dofs: "+str(dofs)+" ("+str(100*dofs/w/h)+"%)")
 
             # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="mesh-"+str(NRef)+".png")
@@ -259,8 +262,8 @@ class AllInOneRunner(object):
             [u, p1, p2, err] = self.algorithm.run() 
 
             print("warp image...")
-            PInv = projection.projectionMatrix(view, viewImage)
-            PInv2N = bmat([ [ PInv, sparse.csr_matrix((w*h, dofs)) ], [ sparse.csr_matrix((w*h, dofs)), PInv ] ])
+            # PInv = projection.projectionMatrix(view, viewImage)
+            # PInv2N = bmat([ [ PInv, sparse.csr_matrix((w*h, dofs)) ], [ sparse.csr_matrix((w*h, dofs)), PInv ] ])
             uk = uk + PInv2N@u
             fw_prev = fw
             fw = utils.apply(self.f1, uk[0:self.w*self.h], uk[self.w*self.h:2*self.w*self.h], self.w, self.h)
@@ -278,10 +281,14 @@ class AllInOneRunner(object):
                 
                 print("adapt mesh ("+str(NRef)+"/"+str(self.NRef)+")...")
                 # quadmesh.showQMeshFunction(view, np.abs(err))
-                viewPrev = self.adaptMesh(view, np.abs(err), model)              
+                viewPrev = self.adaptMesh(view, np.abs(err), model)      
+                elements = view.getElements()
+                dofs = len(elements)        
     
                 print("compute projections...")
                 P = projection.projectionMatrix(viewImage, view)
+                PInv = projection.projectionMatrix(view, viewImage)
+                PInv2N = bmat([ [ PInv, sparse.csr_matrix((w*h, dofs)) ], [ sparse.csr_matrix((w*h, dofs)), PInv ] ])
                 M = projection.projectionMatrix(viewPrev, view)    
                 model.alpha1  = M@model.alpha1
                 model.alpha2  = M@model.alpha2
