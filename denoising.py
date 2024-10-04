@@ -37,18 +37,18 @@ args = parser.parse_args()
 np.random.seed(0)
 
 # Create data
-g, w, h = data.image(args.g)
+g_original, w, h = data.image(args.g)
 N = min( int(np.log2(w)), int(np.log2(h)) )
 if args.crop:
     box = (int(w/2)-2**(N-1), int(h/2)-2**(N-1), int(w/2)+2**(N-1), int(h/2)+2**(N-1))
-    g, w, h = data.image(args.g, box)
+    g_original, w, h = data.image(args.g, box)
 if args.g_out:
     print("Saving input image...")
-    Image.fromarray( (255*np.clip(g, 0, 1)).astype(np.uint8).reshape([h,w]) ).save(args.g_out)
+    Image.fromarray( (255*np.clip(g_original, 0, 1)).astype(np.uint8).reshape([h,w]) ).save(args.g_out)
 
 if args.sigma > 0:
     noise = np.random.normal(loc=0.0, scale=args.sigma, size=w*h)
-    g = g + noise
+    g = g_original + noise
     sigma = np.sqrt(np.sum( noise**2 )/w/h)
     if args.noisy_out:
         print("Saving noisy image...")
@@ -107,10 +107,9 @@ if args.out:
     Image.fromarray( (255*np.clip(u, 0, 1)).astype(np.uint8).reshape([h,w]) ).save(args.out)
 
 print("Benchmark:")
-gGT, wGT, hGT = data.image(args.g)
-AQE = np.sum( (gGT - u)**2 )/w/h
+AQE = np.sum( (g_original - u)**2 )/w/h
 PSNR = 10*np.log10(1./AQE)
-ssim_score, dif = ssim(gGT.reshape([h,w]), u.reshape([h,w]), full=True, data_range=1.)
+ssim_score, dif = ssim(g_original.reshape([h,w]), u.reshape([h,w]), full=True, data_range=1.)
 print(" - PSNR: "+str(PSNR))
 print(" - SSIM: "+str(ssim_score))
 print(" - time: "+str(timer)+"s")
