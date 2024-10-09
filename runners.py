@@ -99,7 +99,7 @@ class DenoisingCoarseToFineRunner(object):
                     level_max = e.level              
 
             # quadmesh.showQMeshFunction(view, np.ones(dofs))
-            # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/mesh-"+str(n)+".png")
+            quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/denoising/mesh-"+str(n)+".png")
             # print([n, dofs])
             
             print("dofs: "+str(dofs)+" ("+str(100*dofs/self.w/self.h)+")")
@@ -108,12 +108,13 @@ class DenoisingCoarseToFineRunner(object):
             self.algorithm.init(view, g, model)
             [u, p1, p2, err] = self.algorithm.run() 
             # quadmesh.showQMeshFunction(view, u, pathname="results/u-"+str(n)+".png", displayEdges=False)
+            err = err - np.min(err)
 
-            if level_max > self.NRef+1:
+            if level_max > self.NRef:
                 break
                 
             print("adapt mesh...")
-            viewPrev = self.adaptMesh(view, np.abs(err), model, u)
+            viewPrev = self.adaptMesh(view, err, model, u)
             
             print("compute projections...")
             P = projection.projectionMatrix(viewImage, view)
@@ -189,9 +190,8 @@ class AllInOneRunner(object):
         
         iSorted = np.argsort(err)[::-1]
         
-        toRefine = max( int(self.ctf_mark*dofs), 1)
-
         # Mark elements
+        toRefine = max( int(self.ctf_mark*dofs), 1)
         elementsToRefine = []
         refined = 0
         n = 0
@@ -232,6 +232,8 @@ class AllInOneRunner(object):
 
         elements = view.getElements()
         dofs = len(elements)
+
+        quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-0.png")
         
         print("compute projections from image to mesh...")
         P = projection.projectionMatrix(viewImage, view)
@@ -255,11 +257,10 @@ class AllInOneRunner(object):
         while True:
             print("dofs: "+str(dofs)+" ("+str(100*dofs/w/h)+"%)")
 
-            # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="mesh-"+str(NRef)+".png")
-
             print("run algorithm...")
             self.algorithm.init(view, f0_proj, fw_proj, np.zeros(2*dofs), model)
             [u, p1, p2, err] = self.algorithm.run() 
+            # err = err - np.min(err)
 
             print("warp image...")
             # PInv = projection.projectionMatrix(view, viewImage)
@@ -281,9 +282,12 @@ class AllInOneRunner(object):
                 
                 print("adapt mesh ("+str(NRef)+"/"+str(self.NRef)+")...")
                 # quadmesh.showQMeshFunction(view, np.abs(err))
-                viewPrev = self.adaptMesh(view, np.abs(err), model)      
+                viewPrev = self.adaptMesh(view, err, model)      
                 elements = view.getElements()
                 dofs = len(elements)        
+
+                print("dofs: "+str(dofs)+" ("+str(100*dofs/w/h)+"%)")
+                quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-"+str(NRef)+".png")
     
                 print("compute projections...")
                 P = projection.projectionMatrix(viewImage, view)

@@ -26,8 +26,13 @@ run__restart() {
 
 run() {
     mkdir results
+    run__convergence
     run__denoising
     run__opticalflow
+}
+
+run__convergence() {
+    python3 convergence.py
 }
 
 run__denoising() {
@@ -151,6 +156,8 @@ elif [ "$1" = "install" ]; then
     run__installpipdependencies
 elif [ "$1" = "restart" ]; then
     run__restart
+elif [ "$1" = "convergence" ]; then
+    run__convergence
 elif [ "$1" = "denoising" ]; then
     run__denoising
 elif [ "$1" = "opticalflow" ]; then
