@@ -21,8 +21,7 @@ def x_derivative_forward(view, bc = "N"):
         Ax.append(n.indice)
         Ay.append(n.indice)
         Av.append(-1./n.dx)
-    else:
-      if len(eastElements) == 2: # Dangling 1
+    elif len(eastElements) == 2: # Dangling 1
         Ax.append(n.indice)
         Ay.append(n.indice)
         Av.append(-4./(3*n.dx))
@@ -34,44 +33,48 @@ def x_derivative_forward(view, bc = "N"):
         Ax.append(n.indice)
         Ay.append(eastElements[1].indice)
         Av.append(2./(3*n.dx))
-      else:
-        if eastElements[0].level == n.level: # regular
+    elif len(eastElements) == 1:
+      if eastElements[0].level == n.level: # regular
+        Ax.append(n.indice)
+        Ay.append(n.indice)
+        Av.append(-1./n.dx)
+        #
+        Ax.append(n.indice)
+        Ay.append(eastElements[0].indice)
+        Av.append(1./n.dx)
+      elif eastElements[0].level == n.level-1:
+        if n.parent.children[quadmesh.NORTH_EAST] == n: # dangling 3
+          southElements = view.getSouthNeighbours(n)
           Ax.append(n.indice)
           Ay.append(n.indice)
-          Av.append(-1./n.dx)
+          Av.append(-1./(3*n.dx))
+          #
+          Ax.append(n.indice)
+          Ay.append(southElements[0].indice)
+          Av.append(-1./(3*n.dx))
           #
           Ax.append(n.indice)
           Ay.append(eastElements[0].indice)
-          Av.append(1./n.dx)
+          Av.append(2./(3*n.dx))
+        elif n.parent.children[quadmesh.SOUTH_EAST] == n: # dangling 2
+          northElements = view.getNorthNeighbours(n)
+          Ax.append(n.indice)
+          Ay.append(n.indice)
+          Av.append(-1./(3*n.dx))
+          #
+          Ax.append(n.indice)
+          Ay.append(northElements[0].indice)
+          Av.append(-1./(3*n.dx))
+          #
+          Ax.append(n.indice)
+          Ay.append(eastElements[0].indice)
+          Av.append(2./(3*n.dx))
         else:
-          if n.parent.children[quadmesh.NORTH_EAST] == n: # dangling 3
-            southElements = view.getSouthNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(-1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(southElements[0].indice)
-            Av.append(-1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(eastElements[0].indice)
-            Av.append(2./(3*n.dx))
-          elif n.parent.children[quadmesh.SOUTH_EAST] == n: # dangling 2
-            northElements = view.getNorthNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(-1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(northElements[0].indice)
-            Av.append(-1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(eastElements[0].indice)
-            Av.append(2./(3*n.dx))
-          else:
-            print("error")
+          print("error")
+      else:
+        print("error")
+    else:
+      print("error")
   return sparse.csr_matrix((Av, (Ax, Ay)), shape=[dofs, dofs])
 
 def x_derivative_backward(view, bc = "N"):
@@ -91,74 +94,94 @@ def x_derivative_backward(view, bc = "N"):
         Ax.append(n.indice)
         Ay.append(n.indice)
         Av.append(1./n.dx)
-    else:
-      if len(westElements) == 2: # dangling 1
-        eastElements = view.getEastNeighbours(n)
-        if len(eastElements) == 0: # on the right-boundary
-          Ax.append(n.indice)
-          Ay.append(westElements[0].indice)
-          Av.append(-2./(3*n.dx))
-          #
-          Ax.append(n.indice)
-          Ay.append(westElements[1].indice)
-          Av.append(-2./(3*n.dx))
-        else:
+    elif len(westElements) == 2: # dangling 1
+        # eastElements = view.getEastNeighbours(n)
+        # if len(eastElements) == 0: # on the right-boundary
+        #   Ax.append(n.indice)
+        #   Ay.append(westElements[0].indice)
+        #   Av.append(-2./(3*n.dx))
+        #   #
+        #   Ax.append(n.indice)
+        #   Ay.append(westElements[1].indice)
+        #   Av.append(-2./(3*n.dx))
+        # else:
+        #   Ax.append(n.indice)
+        #   Ay.append(n.indice)
+        #   Av.append(4./(3*n.dx))
+        #   #
+        #   Ax.append(n.indice)
+        #   Ay.append(westElements[0].indice)
+        #   Av.append(-2./(3*n.dx))
+        #   #
+        #   Ax.append(n.indice)
+        #   Ay.append(westElements[1].indice)
+        #   Av.append(-2./(3*n.dx))
+        Ax.append(n.indice)
+        Ay.append(n.indice)
+        Av.append(4./(3*n.dx))
+        #
+        Ax.append(n.indice)
+        Ay.append(westElements[0].indice)
+        Av.append(-2./(3*n.dx))
+        #
+        Ax.append(n.indice)
+        Ay.append(westElements[1].indice)
+        Av.append(-2./(3*n.dx))
+    elif len(westElements) == 1:
+      if westElements[0].level == n.level: # regular
+        # eastElements = view.getEastNeighbours(n)
+        # if len(eastElements) == 0: # on the right-boundary
+        #   Ax.append(n.indice)
+        #   Ay.append(westElements[0].indice)
+        #   Av.append(-1./n.dx)
+        # else:
+        #   Ax.append(n.indice)
+        #   Ay.append(n.indice)
+        #   Av.append(1./n.dx)
+        #   #
+        #   Ax.append(n.indice)
+        #   Ay.append(westElements[0].indice)
+        #   Av.append(-1./n.dx)
+        Ax.append(n.indice)
+        Ay.append(n.indice)
+        Av.append(1./n.dx)
+        #
+        Ax.append(n.indice)
+        Ay.append(westElements[0].indice)
+        Av.append(-1./n.dx)
+      elif westElements[0].level == n.level-1:
+        if n.parent.children[quadmesh.NORTH_WEST] == n: # dangling 3
+          southElements = view.getSouthNeighbours(n)
           Ax.append(n.indice)
           Ay.append(n.indice)
-          Av.append(4./(3*n.dx))
+          Av.append(1./(3*n.dx))
+          #
+          Ax.append(n.indice)
+          Ay.append(southElements[0].indice)
+          Av.append(1./(3*n.dx))
           #
           Ax.append(n.indice)
           Ay.append(westElements[0].indice)
           Av.append(-2./(3*n.dx))
+        elif n.parent.children[quadmesh.SOUTH_WEST] == n: # dangling 2
+          northElements = view.getNorthNeighbours(n)
+          Ax.append(n.indice)
+          Ay.append(n.indice)
+          Av.append(1./(3*n.dx))
           #
           Ax.append(n.indice)
-          Ay.append(westElements[1].indice)
+          Ay.append(northElements[0].indice)
+          Av.append(1./(3*n.dx))
+          #
+          Ax.append(n.indice)
+          Ay.append(westElements[0].indice)
           Av.append(-2./(3*n.dx))
-      else:
-        if westElements[0].level == n.level: # regular
-          eastElements = view.getEastNeighbours(n)
-          if len(eastElements) == 0: # on the right-boundary
-            Ax.append(n.indice)
-            Ay.append(westElements[0].indice)
-            Av.append(-1./n.dx)
-          else:
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(1./n.dx)
-            #
-            Ax.append(n.indice)
-            Ay.append(westElements[0].indice)
-            Av.append(-1./n.dx)
         else:
-          if n.parent.children[quadmesh.NORTH_WEST] == n: # dangling 3
-            southElements = view.getSouthNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(southElements[0].indice)
-            Av.append(1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(westElements[0].indice)
-            Av.append(-2./(3*n.dx))
-          elif n.parent.children[quadmesh.SOUTH_WEST] == n: # dangling 2
-            northElements = view.getNorthNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(northElements[0].indice)
-            Av.append(1./(3*n.dx))
-            #
-            Ax.append(n.indice)
-            Ay.append(westElements[0].indice)
-            Av.append(-2./(3*n.dx))
-          else:
-            print("error")
-
+          print("error")
+      else:
+        print("error")
+    else:
+      print("error")
   return sparse.csr_matrix((Av, (Ax, Ay)), shape=[dofs, dofs])
 
 def y_derivative_forward(view, bc = "N"):
@@ -178,8 +201,7 @@ def y_derivative_forward(view, bc = "N"):
         Ax.append(n.indice)
         Ay.append(n.indice)
         Av.append(-1./n.dy)
-    else:
-      if len(southElements) == 2: # dangling 1
+    elif len(southElements) == 2: # dangling 1
         Ax.append(n.indice)
         Ay.append(n.indice)
         Av.append(-4./(3*n.dy))
@@ -191,44 +213,48 @@ def y_derivative_forward(view, bc = "N"):
         Ax.append(n.indice)
         Ay.append(southElements[1].indice)
         Av.append(2./(3*n.dy))
-      else:
-        if southElements[0].level == n.level: # regular
+    elif len(southElements) == 1:
+      if southElements[0].level == n.level: # regular
+        Ax.append(n.indice)
+        Ay.append(n.indice)
+        Av.append(-1./n.dy)
+        #
+        Ax.append(n.indice)
+        Ay.append(southElements[0].indice)
+        Av.append(1./n.dy)
+      elif southElements[0].level == n.level-1:
+        if n.parent.children[quadmesh.SOUTH_WEST] == n: # dangling 2
+          eastElements = view.getEastNeighbours(n)
           Ax.append(n.indice)
           Ay.append(n.indice)
-          Av.append(-1./n.dy)
+          Av.append(-1./(3*n.dy))
+          #
+          Ax.append(n.indice)
+          Ay.append(eastElements[0].indice)
+          Av.append(-1./(3*n.dy))
           #
           Ax.append(n.indice)
           Ay.append(southElements[0].indice)
-          Av.append(1./n.dy)
+          Av.append(2./(3*n.dy))
+        elif n.parent.children[quadmesh.SOUTH_EAST] == n: # dangling 3
+          westElements = view.getWestNeighbours(n)
+          Ax.append(n.indice)
+          Ay.append(n.indice)
+          Av.append(-1./(3*n.dy))
+          #
+          Ax.append(n.indice)
+          Ay.append(westElements[0].indice)
+          Av.append(-1./(3*n.dy))
+          #
+          Ax.append(n.indice)
+          Ay.append(southElements[0].indice)
+          Av.append(2./(3*n.dy))
         else:
-          if n.parent.children[quadmesh.SOUTH_WEST] == n: # dangling 2
-            eastElements = view.getEastNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(-1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(eastElements[0].indice)
-            Av.append(-1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(southElements[0].indice)
-            Av.append(2./(3*n.dy))
-          elif n.parent.children[quadmesh.SOUTH_EAST] == n: # dangling 3
-            westElements = view.getWestNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(-1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(westElements[0].indice)
-            Av.append(-1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(southElements[0].indice)
-            Av.append(2./(3*n.dy))
-          else:
-            print("error")
+          print("error")
+      else:
+        print("error")
+    else:
+      print("error")
   return sparse.csr_matrix((Av, (Ax, Ay)), shape=[dofs, dofs])
 
 def y_derivative_backward(view, bc = "N"):
@@ -248,81 +274,100 @@ def y_derivative_backward(view, bc = "N"):
         Ax.append(n.indice)
         Ay.append(n.indice)
         Av.append(1./n.dy)
-    else:
-      if len(northElements) == 2: # dangling 1
-        southElements = view.getSouthNeighbours(n) 
-        if len(southElements) == 0:  # on the bottom-boundary
-          Ax.append(n.indice)
-          Ay.append(northElements[0].indice)
-          Av.append(-2./(3*n.dy))
-          #
-          Ax.append(n.indice)
-          Ay.append(northElements[1].indice)
-          Av.append(-2./(3*n.dy))
-        else:
+    elif len(northElements) == 2: # dangling 1
+      # southElements = view.getSouthNeighbours(n) 
+      # if len(southElements) == 0:  # on the bottom-boundary
+      #   Ax.append(n.indice)
+      #   Ay.append(northElements[0].indice)
+      #   Av.append(-2./(3*n.dy))
+      #   #
+      #   Ax.append(n.indice)
+      #   Ay.append(northElements[1].indice)
+      #   Av.append(-2./(3*n.dy))
+      # else:
+      #   Ax.append(n.indice)
+      #   Ay.append(n.indice)
+      #   Av.append(4./(3*n.dy))
+      #   #
+      #   Ax.append(n.indice)
+      #   Ay.append(northElements[0].indice)
+      #   Av.append(-2./(3*n.dy))
+      #   #
+      #   Ax.append(n.indice)
+      #   Ay.append(northElements[1].indice)
+      #   Av.append(-2./(3*n.dy))
+      Ax.append(n.indice)
+      Ay.append(n.indice)
+      Av.append(4./(3*n.dy))
+      #
+      Ax.append(n.indice)
+      Ay.append(northElements[0].indice)
+      Av.append(-2./(3*n.dy))
+      #
+      Ax.append(n.indice)
+      Ay.append(northElements[1].indice)
+      Av.append(-2./(3*n.dy))
+    elif len(northElements) == 1:
+      if northElements[0].level == n.level: # regular
+        # southElements = view.getSouthNeighbours(n) 
+        # if len(southElements) == 0:  # on the bottom-boundary
+        #   Ax.append(n.indice)
+        #   Ay.append(northElements[0].indice)
+        #   Av.append(-1./n.dy)
+        # else:
+        #   Ax.append(n.indice)
+        #   Ay.append(n.indice)
+        #   Av.append(1./n.dy)
+        #   #
+        #   Ax.append(n.indice)
+        #   Ay.append(northElements[0].indice)
+        #   Av.append(-1./n.dy)
+        Ax.append(n.indice)
+        Ay.append(n.indice)
+        Av.append(1./n.dy)
+        #
+        Ax.append(n.indice)
+        Ay.append(northElements[0].indice)
+        Av.append(-1./n.dy)
+      elif northElements[0].level == n.level-1:
+        if n.parent.children[quadmesh.NORTH_WEST] == n: # dangling 2
+          eastElements = view.getEastNeighbours(n)
           Ax.append(n.indice)
           Ay.append(n.indice)
-          Av.append(4./(3*n.dy))
+          Av.append(1./(3*n.dy))
+          #
+          Ax.append(n.indice)
+          Ay.append(eastElements[0].indice)
+          Av.append(1./(3*n.dy))
           #
           Ax.append(n.indice)
           Ay.append(northElements[0].indice)
           Av.append(-2./(3*n.dy))
+        elif n.parent.children[quadmesh.NORTH_EAST] == n: # dangling 3
+          westElements = view.getWestNeighbours(n)
+          Ax.append(n.indice)
+          Ay.append(n.indice)
+          Av.append(1./(3*n.dy))
           #
           Ax.append(n.indice)
-          Ay.append(northElements[1].indice)
+          Ay.append(westElements[0].indice)
+          Av.append(1./(3*n.dy))
+          #
+          Ax.append(n.indice)
+          Ay.append(northElements[0].indice)
           Av.append(-2./(3*n.dy))
-      else:
-        if northElements[0].level == n.level: # regular
-          southElements = view.getSouthNeighbours(n) 
-          if len(southElements) == 0:  # on the bottom-boundary
-            Ax.append(n.indice)
-            Ay.append(northElements[0].indice)
-            Av.append(-1./n.dy)
-          else:
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(1./n.dy)
-            #
-            Ax.append(n.indice)
-            Ay.append(northElements[0].indice)
-            Av.append(-1./n.dy)
         else:
-          if n.parent.children[quadmesh.NORTH_WEST] == n: # dangling 2
-            eastElements = view.getEastNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(eastElements[0].indice)
-            Av.append(1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(northElements[0].indice)
-            Av.append(-2./(3*n.dy))
-          elif n.parent.children[quadmesh.NORTH_EAST] == n: # dangling 3
-            westElements = view.getWestNeighbours(n)
-            Ax.append(n.indice)
-            Ay.append(n.indice)
-            Av.append(1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(westElements[0].indice)
-            Av.append(1./(3*n.dy))
-            #
-            Ax.append(n.indice)
-            Ay.append(northElements[0].indice)
-            Av.append(-2./(3*n.dy))
-          else:
-            print("error")
-
+          print("error")
+      else:
+        print("error")
+    else:
+      print("error")
   return sparse.csr_matrix((Av, (Ax, Ay)), shape=[dofs, dofs])
 
 def gradOperator(view, bc = "N"):
   x = x_derivative_forward(view, bc)
   y = y_derivative_forward(view, bc)
   return  bmat([ [x], [y] ])
-
 
 def divOperator(view, bc = "N"):
   x = x_derivative_backward(view, bc)

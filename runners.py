@@ -233,7 +233,7 @@ class AllInOneRunner(object):
         elements = view.getElements()
         dofs = len(elements)
 
-        quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-0.png")
+        # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-0.png")
         
         print("compute projections from image to mesh...")
         P = projection.projectionMatrix(viewImage, view)
@@ -287,7 +287,7 @@ class AllInOneRunner(object):
                 dofs = len(elements)        
 
                 print("dofs: "+str(dofs)+" ("+str(100*dofs/w/h)+"%)")
-                quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-"+str(NRef)+".png")
+                # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-"+str(NRef)+".png")
     
                 print("compute projections...")
                 P = projection.projectionMatrix(viewImage, view)
