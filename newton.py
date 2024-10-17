@@ -103,7 +103,6 @@ class L1L2TVNewtonDenoising(object):
         u  = TAdj@g
         p1 = T@u
         p2 = gradOp@u
-        residual = self.residual(u, p1, p2)
         # Loop
         with alive_bar(self.max_it, force_tty=True) as bar:
             for i in range(self.max_it):
@@ -117,68 +116,58 @@ class L1L2TVNewtonDenoising(object):
                     p1 = alpha1/np.maximum(alpha1, np.abs(p1))*p1
                 p2 = np.hstack( (lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa)), np.hstack( (rho2N(mesh, p2),rho2N(mesh, p2))))*p2
             
-                # rhoGradUl = rho2N(mesh, gradOp@u)
-                gradUl = gradOp@u
-                xHl = []
-                yHl = []
-                vHl = []
-                for e in elements:
-                    if chi2[e.indice] == 1: 
-                        al = lambdaa[e.indice] - 1./m2[e.indice]*p2[e.indice]*gradUl[e.indice]
-                        bl =                   - 1./m2[e.indice]*p2[e.indice]*gradUl[e.indice + dofs]
-                        cl =                   - 1./m2[e.indice]*p2[e.indice + dofs]*gradUl[e.indice]
-                        dl = lambdaa[e.indice] - 1./m2[e.indice]*p2[e.indice + dofs]*gradUl[e.indice + dofs]
-                    else:
-                        al = lambdaa[e.indice]
-                        bl = 0
-                        cl = 0
-                        dl = lambdaa[e.indice]
+                # gradUl = gradOp@u
+                # xHl = []
+                # yHl = []
+                # vHl = []
+                # for e in elements:
+                #     if chi2[e.indice] == 1: 
+                #         al = lambdaa[e.indice] - 1./m2[e.indice]*p2[e.indice]*gradUl[e.indice]
+                #         bl =                   - 1./m2[e.indice]*p2[e.indice]*gradUl[e.indice + dofs]
+                #         cl =                   - 1./m2[e.indice]*p2[e.indice + dofs]*gradUl[e.indice]
+                #         dl = lambdaa[e.indice] - 1./m2[e.indice]*p2[e.indice + dofs]*gradUl[e.indice + dofs]
+                #     else:
+                #         al = lambdaa[e.indice]
+                #         bl = 0
+                #         cl = 0
+                #         dl = lambdaa[e.indice]
 
-                    c = np.array([[al, bl], [cl, dl]])
-                    eigenvalues, eigenvectors = np.linalg.eigh(0.5*(c+c.transpose()))
-                    cHat = eigenvectors @ np.diag(np.maximum(eigenvalues, 0)) @ np.linalg.inv(eigenvectors) # projection to positive definite matrices space.
-                    # cHat = cHat.real # avoid rounding error for the imaginary part
+                #     c = np.array([[al, bl], [cl, dl]])
+                #     eigenvalues, eigenvectors = np.linalg.eigh(0.5*(c+c.transpose()))
+                #     cHat = eigenvectors @ np.diag(np.maximum(eigenvalues, 0)) @ np.linalg.inv(eigenvectors) # projection to positive definite matrices space.
 
-                    xHl.append(e.indice)
-                    yHl.append(e.indice)
-                    vHl.append(cHat[0,0])
-                    xHl.append(e.indice + dofs)
-                    yHl.append(e.indice)
-                    vHl.append(cHat[0,1])
-                    xHl.append(e.indice)
-                    yHl.append(e.indice + dofs)
-                    vHl.append(cHat[1,0])
-                    xHl.append(e.indice + dofs)
-                    yHl.append(e.indice + dofs)
-                    vHl.append(cHat[1,1])           
-                    
-                Cl = sparse.csr_matrix((vHl, (yHl, xHl)), shape=[2*dofs, 2*dofs])
+                #     xHl.append(e.indice)
+                #     yHl.append(e.indice)
+                #     vHl.append(cHat[0,0])
+                #     xHl.append(e.indice + dofs)
+                #     yHl.append(e.indice)
+                #     vHl.append(cHat[0,1])
+                #     xHl.append(e.indice)
+                #     yHl.append(e.indice + dofs)
+                #     vHl.append(cHat[1,0])
+                #     xHl.append(e.indice + dofs)
+                #     yHl.append(e.indice + dofs)
+                #     vHl.append(cHat[1,1])           
+                # Cl = sparse.csr_matrix((vHl, (yHl, xHl)), shape=[2*dofs, 2*dofs])
+                Cl = D2N(lambdaa) - D2N(chi2)@DN(p2)@D2N(1./m2)@N(mesh, gradOp@u)
                 H = B - divOp@D2N(1./m2)@Cl@gradOp + TAdj@DN(1./m1)@( DN(alpha1) - DN(chi1)@DN(1./m1)@DN(T@u-g)@DN(p1) )@T
                 F = DN(alpha2)@TAdj@g - B@u + DN(lambdaa)@divOp@D2N(1./m2)@gradOp@u - TAdj@DN(alpha1)@DN(1./m1)@(T@u-g)
                 
                 deltaU = sparse.linalg.spsolve(H, F) 
+                # deltaU = sparse.linalg.spsolve(H.transpose()@H, H.transpose()@F) 
                 deltaP1 = - p1 + DN(1./m1)@DN(alpha1)@(T@(u+deltaU)-g)       - DN(chi1)@DN(1./m1**2)@DN(T@u-g)@T@deltaU@DN(p1)
                 deltaP2 = - p2 + D2N(1./m2)@D2N(lambdaa)@gradOp@(u+deltaU) - D2N(chi2)@D2N(1./m2**2)@N(mesh, gradOp@u)@gradOp@deltaU@DN(p2)
-                                
-                theta = 1.
-                residual_prev = residual
-                uBar  = u  + theta*deltaU
-                p1Bar = p1 + theta*deltaP1
-                p2Bar = p2 + theta*deltaP2
-                if alpha1.all() != 0:
-                    p1Bar = alpha1/np.maximum(alpha1, np.abs(p1Bar))*p1Bar
-                p2Bar = np.hstack( (lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa)), np.hstack( (rho2N(mesh, p2Bar),rho2N(mesh, p2Bar))))*p2Bar
-                residual = self.residual(uBar, p1Bar, p2Bar)
                     
-                u  = uBar
-                p1 = p1Bar
-                p2 = p2Bar
+                u  = u + deltaU
+                p1 = p1 + deltaP1
+                p2 = p2 + deltaP2
+
+                if alpha1.all() != 0:
+                    p1 = alpha1/np.maximum(alpha1, np.abs(p1))*p1
+                p2 = np.hstack( (lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa)), np.hstack( (rho2N(mesh, p2),rho2N(mesh, p2))))*p2
                 
                 residual_l2 = self.residual(u, p1, p2)
                 if residual_l2 < self.epsilon:
-                    if alpha1.all() != 0:
-                        p1 = alpha1/np.maximum(alpha1, np.abs(p1))*p1
-                    p2 = np.hstack( (lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa)), np.hstack( (rho2N(mesh, p2),rho2N(mesh, p2))))*p2
                     break
                 bar.text("stopping criterion: "+str(residual_l2))
                 bar()
@@ -298,8 +287,6 @@ class L1L2TVNewtonOpticalFlow(object):
         u  = TAdj@g # np.zeros(2*dofs)
         p1 = T@u # np.zeros(dofs)
         p2 = gradOp2N@u # gradOp2N@u #np.zeros(4*dofs)
-        residual = self.residual(u, p1, p2)
-        # print(residual)
         # Loop
         with alive_bar(self.max_it, force_tty=True) as bar:
             for i in range(self.max_it):
@@ -316,103 +303,104 @@ class L1L2TVNewtonOpticalFlow(object):
                 rhoFP2 = rhoF(mesh, p2)
                 p2 = np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa)), np.hstack( (rhoFP2,rhoFP2,rhoFP2,rhoFP2)))*p2
             
-                gradOp2NU = gradOp2N@u
-                rhoFGradU = rhoF(mesh, gradOp2NU)
-                xHl = []
-                yHl = []
-                vHl = []
-                for e in elements:
-                    if chi2[e.indice] == 1: 
-                        c11 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice]
-                        c12 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice+dofs]
-                        c13 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice+2*dofs]
-                        c14 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice+3*dofs]
-                        c21 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice]
-                        c22 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice+dofs]
-                        c23 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice+2*dofs]
-                        c24 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice+3*dofs]
-                        c31 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice]
-                        c32 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice+dofs]
-                        c33 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice+2*dofs]
-                        c34 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice+3*dofs]
-                        c41 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice]
-                        c42 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice+dofs]
-                        c43 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice+2*dofs]
-                        c44 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice+3*dofs]
-                    else:
-                        c11 = lambdaa[e.indice]
-                        c12 = 0
-                        c13 = 0
-                        c14 = 0
-                        c21 = 0
-                        c22 = lambdaa[e.indice]
-                        c23 = 0
-                        c24 = 0
-                        c31 = 0
-                        c32 = 0
-                        c33 = lambdaa[e.indice]
-                        c34 = 0
-                        c41 = 0
-                        c42 = 0
-                        c43 = 0
-                        c44 = lambdaa[e.indice]
-                    c = np.array([[c11, c12, c13, c14], [c21, c22, c23, c24], [c31, c32, c33, c34], [c41, c42, c43, c44]])
-                    eigenvalues, eigenvectors = np.linalg.eigh(0.5*(c+c.transpose()))
-                    cHat = eigenvectors @ np.diag(np.maximum(eigenvalues, 0.01)) @ np.linalg.inv(eigenvectors) # projection to positive definite matrices space.
-                    # cHat = cHat.real # avoid rounding error for the imaginary part
-                    xHl.append(e.indice)
-                    yHl.append(e.indice)
-                    vHl.append(cHat[0,0])
-                    xHl.append(e.indice + dofs)
-                    yHl.append(e.indice)
-                    vHl.append(cHat[0,1])
-                    xHl.append(e.indice + 2*dofs)
-                    yHl.append(e.indice)
-                    vHl.append(cHat[0,2])
-                    xHl.append(e.indice + 3*dofs)
-                    yHl.append(e.indice)
-                    vHl.append(cHat[0,3])
-                    xHl.append(e.indice)
-                    yHl.append(e.indice + dofs)
-                    vHl.append(cHat[1,0])
-                    xHl.append(e.indice + dofs)
-                    yHl.append(e.indice + dofs)
-                    vHl.append(cHat[1,1])
-                    xHl.append(e.indice + 2*dofs)
-                    yHl.append(e.indice + dofs)
-                    vHl.append(cHat[1,2])
-                    xHl.append(e.indice + 3*dofs)
-                    yHl.append(e.indice + dofs)
-                    vHl.append(cHat[1,3])
-                    xHl.append(e.indice)
-                    yHl.append(e.indice + 2*dofs)
-                    vHl.append(cHat[2,0])
-                    xHl.append(e.indice + dofs)
-                    yHl.append(e.indice + 2*dofs)
-                    vHl.append(cHat[2,1])
-                    xHl.append(e.indice + 2*dofs)
-                    yHl.append(e.indice + 2*dofs)
-                    vHl.append(cHat[2,2])
-                    xHl.append(e.indice + 3*dofs)
-                    yHl.append(e.indice + 2*dofs)
-                    vHl.append(cHat[2,3])
-                    xHl.append(e.indice)
-                    yHl.append(e.indice + 3*dofs)
-                    vHl.append(cHat[3,0])
-                    xHl.append(e.indice + dofs)
-                    yHl.append(e.indice + 3*dofs)
-                    vHl.append(cHat[3,1])
-                    xHl.append(e.indice + 2*dofs)
-                    yHl.append(e.indice + 3*dofs)
-                    vHl.append(cHat[3,2])
-                    xHl.append(e.indice + 3*dofs)
-                    yHl.append(e.indice + 3*dofs)
-                    vHl.append(cHat[3,3])
+                # gradOp2NU = gradOp2N@u
+                # rhoFGradU = rhoF(mesh, gradOp2NU)
+                # xHl = []
+                # yHl = []
+                # vHl = []
+                # for e in elements:
+                #     if chi2[e.indice] == 1: 
+                #         c11 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice]
+                #         c12 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice+dofs]
+                #         c13 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice+2*dofs]
+                #         c14 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice]*gradOp2NU[e.indice+3*dofs]
+                #         c21 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice]
+                #         c22 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice+dofs]
+                #         c23 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice+2*dofs]
+                #         c24 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+dofs]*gradOp2NU[e.indice+3*dofs]
+                #         c31 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice]
+                #         c32 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice+dofs]
+                #         c33 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice+2*dofs]
+                #         c34 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+2*dofs]*gradOp2NU[e.indice+3*dofs]
+                #         c41 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice]
+                #         c42 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice+dofs]
+                #         c43 = 0                 - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice+2*dofs]
+                #         c44 = lambdaa[e.indice] - 1./rhoFGradU[e.indice]*p2[e.indice+3*dofs]*gradOp2NU[e.indice+3*dofs]
+                #     else:
+                #         c11 = lambdaa[e.indice]
+                #         c12 = 0
+                #         c13 = 0
+                #         c14 = 0
+                #         c21 = 0
+                #         c22 = lambdaa[e.indice]
+                #         c23 = 0
+                #         c24 = 0
+                #         c31 = 0
+                #         c32 = 0
+                #         c33 = lambdaa[e.indice]
+                #         c34 = 0
+                #         c41 = 0
+                #         c42 = 0
+                #         c43 = 0
+                #         c44 = lambdaa[e.indice]
+                #     c = np.array([[c11, c12, c13, c14], [c21, c22, c23, c24], [c31, c32, c33, c34], [c41, c42, c43, c44]])
+                #     eigenvalues, eigenvectors = np.linalg.eigh(0.5*(c+c.transpose()))
+                #     cHat = eigenvectors @ np.diag(np.maximum(eigenvalues, 0)) @ np.linalg.inv(eigenvectors) # projection to positive definite matrices space.
+                #     xHl.append(e.indice)
+                #     yHl.append(e.indice)
+                #     vHl.append(cHat[0,0])
+                #     xHl.append(e.indice + dofs)
+                #     yHl.append(e.indice)
+                #     vHl.append(cHat[0,1])
+                #     xHl.append(e.indice + 2*dofs)
+                #     yHl.append(e.indice)
+                #     vHl.append(cHat[0,2])
+                #     xHl.append(e.indice + 3*dofs)
+                #     yHl.append(e.indice)
+                #     vHl.append(cHat[0,3])
+                #     xHl.append(e.indice)
+                #     yHl.append(e.indice + dofs)
+                #     vHl.append(cHat[1,0])
+                #     xHl.append(e.indice + dofs)
+                #     yHl.append(e.indice + dofs)
+                #     vHl.append(cHat[1,1])
+                #     xHl.append(e.indice + 2*dofs)
+                #     yHl.append(e.indice + dofs)
+                #     vHl.append(cHat[1,2])
+                #     xHl.append(e.indice + 3*dofs)
+                #     yHl.append(e.indice + dofs)
+                #     vHl.append(cHat[1,3])
+                #     xHl.append(e.indice)
+                #     yHl.append(e.indice + 2*dofs)
+                #     vHl.append(cHat[2,0])
+                #     xHl.append(e.indice + dofs)
+                #     yHl.append(e.indice + 2*dofs)
+                #     vHl.append(cHat[2,1])
+                #     xHl.append(e.indice + 2*dofs)
+                #     yHl.append(e.indice + 2*dofs)
+                #     vHl.append(cHat[2,2])
+                #     xHl.append(e.indice + 3*dofs)
+                #     yHl.append(e.indice + 2*dofs)
+                #     vHl.append(cHat[2,3])
+                #     xHl.append(e.indice)
+                #     yHl.append(e.indice + 3*dofs)
+                #     vHl.append(cHat[3,0])
+                #     xHl.append(e.indice + dofs)
+                #     yHl.append(e.indice + 3*dofs)
+                #     vHl.append(cHat[3,1])
+                #     xHl.append(e.indice + 2*dofs)
+                #     yHl.append(e.indice + 3*dofs)
+                #     vHl.append(cHat[3,2])
+                #     xHl.append(e.indice + 3*dofs)
+                #     yHl.append(e.indice + 3*dofs)
+                #     vHl.append(cHat[3,3])
                 # Cl = sparse.csr_matrix((vHl, (yHl, xHl)), shape=[4*dofs, 4*dofs])
                 Cl = D4N(lambdaa) - D4N(chi2)@DN(p2)@D4N(1./m2)@N(mesh, gradOp2N@u)
                 H = B - divOp2N@D4N(1./m2)@Cl@gradOp2N + TAdj@DN(1./m1)@( DN(alpha1) - DN(chi1)@DN(1./m1)@DN(T@u-g)@DN(p1) )@T
                 F = D2N(alpha2)@TAdj@g - B@u + D2N(lambdaa)@divOp2N@D4N(1./m2)@gradOp2N@u - TAdj@DN(alpha1)@DN(1./m1)@(T@u-g)
+                
                 deltaU  = sparse.linalg.spsolve(H, F) 
+                # deltaU  = sparse.linalg.spsolve(H.transpose()@H, H.transpose()@F) 
                 deltaP1 = - p1 + DN(1./m1)@DN(alpha1)@(T@(u+deltaU)-g)       - DN(chi1)@DN(1./m1**2)@DN(T@u-g)@DN(p1)@T@deltaU
                 deltaP2 = - p2 + D4N(1./m2)@D4N(lambdaa)@gradOp2N@(u+deltaU) - D4N(chi2)@D4N(1./m2**2)@DN(p2)@N(mesh, gradOp2N@u)@gradOp2N@deltaU
 
@@ -420,13 +408,13 @@ class L1L2TVNewtonOpticalFlow(object):
                 p1 = p1 + deltaP1
                 p2 = p2 + deltaP2
 
-                residual_l2 = self.residual(u, p1, p2)
+                if alpha1.all() != 0:
+                    p1 = alpha1/np.maximum(alpha1, np.abs(p1))*p1
+                rhoFP2 = rhoF(mesh, p2)
+                p2 = np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa)), np.hstack( (rhoFP2,rhoFP2,rhoFP2,rhoFP2)))*p2
 
+                residual_l2 = self.residual(u, p1, p2)
                 if residual_l2 < self.epsilon:
-                    if alpha1.all() != 0:
-                        p1 = alpha1/np.maximum(alpha1, np.abs(p1))*p1
-                    rhoFP2 = rhoF(mesh, p2)
-                    p2 = np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa)), np.hstack( (rhoFP2,rhoFP2,rhoFP2,rhoFP2)))*p2
                     break
                     
                 bar.text("stopping criterion: "+str(residual_l2))

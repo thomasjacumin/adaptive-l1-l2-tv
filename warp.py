@@ -35,7 +35,7 @@ class Warping(object):
             [u, p1, p2] = self.runner.run()
             uk = uk + u
             # print("saving flo file...")
-            # utils.saveFlo(self.w, self.h, uk[0:self.w*self.h], uk[self.w*self.h:2*self.w*self.h], "results/"+str(i)+".flo")
+            # utils.saveFlo(self.w, self.h, uk[0:self.w*self.h], uk[self.w*self.h:2*self.w*self.h], "results/convergence/"+str(i)+".flo")
             print("warp image...")
             fw_prev = fw
             fw = utils.apply(self.f1, uk[0:self.w*self.h], uk[self.w*self.h:2*self.w*self.h], self.w, self.h)
@@ -44,7 +44,7 @@ class Warping(object):
             # fw = utils.apply_backward_optical_flow(self.f1.reshape([self.h, self.w]), (u[0:self.w*self.h]).reshape([self.h, self.w]), (u[self.w*self.h:2*self.w*self.h]).reshape([self.h, self.w])).flatten()
             if self.normalize:
                 fw = fw/(np.sum(fw)/(self.w*self.h))
-            # utils.saveImage(self.w, self.h, fw, "results/fw-"+str(i)+".png")
+            # utils.saveImage(self.w, self.h, fw, "results/convergence/fw-"+str(i)+".png")
             # qmesh.showQMeshFunction(qmesh.QMesh(self.w,self.h), fw)
             crit = self.warp_error(fw, fw_prev, self.f0)
             print("warp stopping criterion: "+str(crit))

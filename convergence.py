@@ -43,8 +43,8 @@ if r < 1:
     u_exact = np.zeros(dofs)
 else:
     u_exact = 2*( 1 - 1/(model.alpha2*r))*f
-Image.fromarray( np.uint8(255*f).reshape([h,w]), 'L' ).save("results/f.png")
-Image.fromarray( np.uint8(255*u_exact).reshape([h,w]), 'L' ).save("results/u_exact.png")
+Image.fromarray( np.uint8(255*f).reshape([h,w]), 'L' ).save("results/convergence/f.png")
+Image.fromarray( np.uint8(255*u_exact).reshape([h,w]), 'L' ).save("results/convergence/u_exact.png")
 
 
 
@@ -56,7 +56,7 @@ list_error_unif = []
 elements = viewExact.getElements()
 dofs = len(elements)
 
-algorithm = newton.L1L2TVNewtonDenoising(100, 1e-3)
+algorithm = newton.L1L2TVNewtonDenoising(100, 1e-5)
 
 print(max_n)
 for n in range(2, max_n):
@@ -91,7 +91,7 @@ for n in range(2, max_n):
     # elements = view.getElements()
     # dofs = len(elements)
 
-    Image.fromarray( np.uint8(255*PInv@u).reshape([h,w]), 'L' ).save("results/unif-"+str(n)+".png")
+    Image.fromarray( np.uint8(255*PInv@u).reshape([h,w]), 'L' ).save("results/convergence/unif-"+str(n)+".png")
 
     elements_curr = view.getElements()
     dofs_curr = len(elements_curr)
@@ -136,7 +136,7 @@ def adaptMesh(view, err, model, u):
 list_dofs_ada = []
 list_error_ada = []
 
-algorithm = newton.L1L2TVNewtonDenoising(100, 1e-3)
+algorithm = newton.L1L2TVNewtonDenoising(100, 1e-5)
 
 view = quadmesh.QuadMeshLeafView(6, 6, int(w/2**(max_n-1)), int(h/2**(max_n-1)))
 view.create()
@@ -157,11 +157,12 @@ g = P@f
 elements = viewExact.getElements()
 dofs = len(elements)
 
-for n in range(0, max_n+1):
+for n in range(0, max_n):
     elements_curr = view.getElements()
     dofs_curr = len(elements_curr)
-    
-    quadmesh.showQMeshFunction(view, np.ones(dofs_curr), pathname="results/mesh-"+str(n)+".png")
+
+    print(n, dofs_curr)
+    quadmesh.showQMeshFunction(view, np.ones(dofs_curr), pathname="results/convergence/mesh-"+str(n)+".png")
     
     algorithm.init(view, g, model_approx)
     [u, p1, p2, err] = algorithm.run()
@@ -181,7 +182,7 @@ for n in range(0, max_n+1):
     list_dofs_ada.append(dofs_curr)
     list_error_ada.append(l2_error)
 
-    # Image.fromarray( np.uint8(255*PInv@u).reshape([h,w]), 'L' ).save("results/ada-"+str(n)+".png")
+    # Image.fromarray( np.uint8(255*PInv@u).reshape([h,w]), 'L' ).save("results/convergence/ada-"+str(n)+".png")
 
     print("adapt mesh...")
     adaptMesh(view, err, model_approx, u)
@@ -197,7 +198,7 @@ for n in range(0, max_n+1):
     g = P@f
 
 
-f = open("results/convergence.txt", "w")
+f = open("results/convergence/convergence.txt", "w")
 f.write(str(list_dofs_unif)+"\n")
 f.write(str(list_error_unif)+"\n")
 
@@ -216,5 +217,5 @@ plt.xlabel("log(#dofs) ")
 plt.ylabel("$\\|u_\\text{exact} - u_h\\|_{L^2(\Omega)}$")
 plt.title("title")
 plt.legend()
-plt.savefig('results/convergence.png')
+plt.savefig('results/convergence/convergence.png')
 plt.show()

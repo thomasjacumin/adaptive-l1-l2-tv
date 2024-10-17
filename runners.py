@@ -99,7 +99,7 @@ class DenoisingCoarseToFineRunner(object):
                     level_max = e.level              
 
             # quadmesh.showQMeshFunction(view, np.ones(dofs))
-            quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/denoising/mesh-"+str(n)+".png")
+            # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/denoising/mesh-"+str(n)+".png")
             # print([n, dofs])
             
             print("dofs: "+str(dofs)+" ("+str(100*dofs/self.w/self.h)+")")
