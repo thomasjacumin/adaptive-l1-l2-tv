@@ -10,6 +10,7 @@ import newton
 import data
 import models
 import runners
+import utils
 
 # Parse parameters
 parser = argparse.ArgumentParser(description="sample argument parser")
@@ -38,7 +39,7 @@ np.random.seed(0)
 
 # Create data
 g_original, w, h = data.image(args.g)
-N = min( int(np.log2(w)), int(np.log2(h)) )
+N = min( int(np.log2(w)), int(np.log2(h)) ) 
 if args.crop:
     box = (int(w/2)-2**(N-1), int(h/2)-2**(N-1), int(w/2)+2**(N-1), int(h/2)+2**(N-1))
     g_original, w, h = data.image(args.g, box)

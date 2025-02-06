@@ -103,6 +103,10 @@ class L1L2TVNewtonDenoising(object):
         u  = TAdj@g
         p1 = T@u
         p2 = gradOp@u
+        min_residual_l2 = self.residual(u, p1, p2)
+        min_u = u
+        min_p1 = p1
+        min_p2 = p2
         # Loop
         with alive_bar(self.max_it, force_tty=True) as bar:
             for i in range(self.max_it):
@@ -167,10 +171,18 @@ class L1L2TVNewtonDenoising(object):
                 p2 = np.hstack( (lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa)), np.hstack( (rho2N(mesh, p2),rho2N(mesh, p2))))*p2
                 
                 residual_l2 = self.residual(u, p1, p2)
+                if residual_l2 < min_residual_l2:
+                  min_residual_l2 = residual_l2
+                  min_u = u
+                  min_p1 = p1
+                  min_p2 = p2
                 if residual_l2 < self.epsilon:
                     break
-                bar.text("stopping criterion: "+str(residual_l2))
+                bar.text("stopping criterion: "+str(residual_l2)+" min: "+str(min_residual_l2))
                 bar()
+        u = min_u
+        p1 = min_p1
+        p2 = min_p2
         [err1, err2] = error_indicators.L1L2TV_dualgap_error_scalar(mesh, u, p1, p2, g, lambdaa, alpha1, alpha2, beta, B, T, TAdj, S, gamma1, gamma2, dofs, elements)     
         err = err1 - err2
         return [u, p1, p2, err]
@@ -287,6 +299,10 @@ class L1L2TVNewtonOpticalFlow(object):
         u  = TAdj@g # np.zeros(2*dofs)
         p1 = T@u # np.zeros(dofs)
         p2 = gradOp2N@u # gradOp2N@u #np.zeros(4*dofs)
+        min_residual_l2 = self.residual(u, p1, p2)
+        min_u = u
+        min_p1 = p1
+        min_p2 = p2
         # Loop
         with alive_bar(self.max_it, force_tty=True) as bar:
             for i in range(self.max_it):
@@ -414,11 +430,19 @@ class L1L2TVNewtonOpticalFlow(object):
                 p2 = np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa))/np.maximum(np.hstack( (lambdaa,lambdaa,lambdaa,lambdaa)), np.hstack( (rhoFP2,rhoFP2,rhoFP2,rhoFP2)))*p2
 
                 residual_l2 = self.residual(u, p1, p2)
+                if residual_l2 < min_residual_l2:
+                  min_residual_l2 = residual_l2
+                  min_u = u
+                  min_p1 = p1
+                  min_p2 = p2
                 if residual_l2 < self.epsilon:
                     break
                     
                 bar.text("stopping criterion: "+str(residual_l2))
                 bar()
+        u = min_u
+        p1 = min_p1
+        p2 = min_p2
         [err1, err2] = error_indicators.L1L2TV_dualgap_error(mesh, u, p1, p2, g, lambdaa, alpha1, alpha2, beta, B, T, TAdj, S, gamma1, gamma2, dofs, elements)     
         err = err1 - err2
         return [u, p1, p2, err]
