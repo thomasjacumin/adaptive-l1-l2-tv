@@ -10,11 +10,12 @@ from PIL import Image
 
 # Coarse-to-fine runner
 class DenoisingCoarseToFineRunner(object):
-    def __init__(self, algorithm, w, h, NRef):
+    def __init__(self, algorithm, w, h, NRef, multi_scale):
         self.algorithm = algorithm
         self.w = w
         self.h = h
         self.NRef = NRef
+        self.multi_scale = multi_scale
 
     def init(self, model, g, sigma):
         self.model = model
@@ -75,7 +76,14 @@ class DenoisingCoarseToFineRunner(object):
         view = quadmesh.QuadMeshLeafView(self.w, self.h, int(self.w/2**(self.NRef)), int(self.h/2**(self.NRef)))
         view.create()
         view.computeIndices()
-        
+
+        elements = view.getElements()
+        dofs = len(elements)
+        level_max = elements[0].level
+        for e in elements:
+            if e.level > level_max:
+                level_max = e.level     
+    
         print("compute projections from image to mesh...")
         P = projection.projectionMatrix(viewImage, view)
         # copy model
@@ -89,36 +97,36 @@ class DenoisingCoarseToFineRunner(object):
         # copy data
         g = P@self.g
         n = 0
-        while True:
-            # view.show()
-            elements = view.getElements()
-            dofs = len(elements)
-            level_max = elements[0].level
-            for e in elements:
-                if e.level > level_max:
-                    level_max = e.level              
-
-            # quadmesh.showQMeshFunction(view, np.ones(dofs))
+        # Init
+        u_0  = None
+        p1_0 = None
+        p2_0 = None
+        while True:                  
             # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/denoising/mesh-"+str(n)+".png")
-            # print([n, dofs])
             
             print("dofs: "+str(dofs)+" ("+str(100*dofs/self.w/self.h)+")")
-        
             print("run algorithm...")
             self.algorithm.init(view, g, model)
-            [u, p1, p2, err] = self.algorithm.run() 
-            # quadmesh.showQMeshFunction(view, u, pathname="results/u-"+str(n)+".png", displayEdges=False)
+            [u, p1, p2, err] = self.algorithm.run(u_0=u_0, p1_0=p1_0, p2_0=p2_0) 
             err = err - np.min(err)
 
             if level_max > self.NRef:
                 break
                 
             print("adapt mesh...")
+            dofs_prev = dofs
             viewPrev = self.adaptMesh(view, err, model, u)
+            elements = view.getElements()
+            dofs = len(elements)
+            level_max = elements[0].level
+            for e in elements:
+                if e.level > level_max:
+                    level_max = e.level 
             
             print("compute projections...")
             P = projection.projectionMatrix(viewImage, view)
             M = projection.projectionMatrix(viewPrev, view)    
+            
             model.alpha1  = M@model.alpha1
             model.alpha2  = M@model.alpha2
             model.lambdaa = M@model.lambdaa
@@ -126,7 +134,12 @@ class DenoisingCoarseToFineRunner(object):
             model.gamma1  = M@model.gamma1
             model.gamma2  = M@model.gamma2
             g = P@self.g
-            
+
+            if self.multi_scale:
+                u_0  = M@u
+                p1_0 = M@p1
+                M2N = bmat([ [ M, sparse.csr_matrix((dofs, dofs_prev)) ], [ sparse.csr_matrix((dofs, dofs_prev)), M ] ])
+                p2_0 = M2N@p2            
             n = n + 1
         
         print("compute projections from mesh to image...")
@@ -134,7 +147,7 @@ class DenoisingCoarseToFineRunner(object):
         return PInv@u
         
     def __str__(self):
-        return "Runner: coarse-to-fine runner:\n - NRef    = "+str(self.NRef)
+        return "Runner: coarse-to-fine runner:\n - NRef        = "+str(self.NRef)+"\n - multi_scale = "+str(self.multi_scale)
 
 class SimpleRunner(object):
     def __init__(self, algorithm, w, h):

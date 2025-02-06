@@ -33,6 +33,7 @@ parser.add_argument("--algo-max-it", nargs='?', type=int, default=0, help="maxim
 parser.add_argument("--algo-epsilon", nargs='?', type=float, default=-1., help="stopping threshold for the denoising algorithm")
 # Coarse-to-fine parameters
 parser.add_argument("--N-refine", nargs='?', type=int, default=0, help="number of refinement allowed (0 for non-adaptivity)")
+parser.add_argument("--multi-scale", action=argparse.BooleanOptionalAction, help="Enable multiscale")
 
 args = parser.parse_args()
 np.random.seed(0)
@@ -95,7 +96,8 @@ if args.N_refine == 0:
     algorithm.init(view, g, model)
     [u, p1, p2, err] = algorithm.run()
 else:
-    runner = runners.DenoisingCoarseToFineRunner(algorithm, w, h, args.N_refine)
+    multi_scale = True if args.multi_scale else False
+    runner = runners.DenoisingCoarseToFineRunner(algorithm, w, h, args.N_refine, multi_scale)
     print(runner)
     runner.init(model, g, sigma)
     u = runner.run()

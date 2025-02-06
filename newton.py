@@ -74,7 +74,7 @@ class L1L2TVNewtonDenoising(object):
 
         return residual_l2
 
-    def run(self): 
+    def run(self, u_0=None, p1_0=None, p2_0=None): 
         mesh = self.mesh
         elements = mesh.getElements()
         dofs = len(elements)
@@ -100,9 +100,10 @@ class L1L2TVNewtonDenoising(object):
         N = lambda mesh, v : bmat([ [sparse.diags(v[0:dofs]), sparse.diags(v[dofs:2*dofs])], [sparse.diags(v[0:dofs]), sparse.diags(v[dofs:2*dofs])] ])
         
         # Loop Init
-        u  = TAdj@g
-        p1 = T@u
-        p2 = gradOp@u
+        u = TAdj@g if u_0 is None else u_0
+        p1 = T@u if p1_0 is None else p1_0
+        p2 = gradOp@u if p2_0 is None else p2_0     
+        
         min_residual_l2 = self.residual(u, p1, p2)
         min_u = u
         min_p1 = p1
@@ -180,6 +181,7 @@ class L1L2TVNewtonDenoising(object):
                     break
                 bar.text("stopping criterion: "+str(residual_l2)+" min: "+str(min_residual_l2))
                 bar()
+        print(f"Residual {residual_l2}")
         u = min_u
         p1 = min_p1
         p2 = min_p2
