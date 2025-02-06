@@ -370,22 +370,57 @@ class QuadMeshLeafView(object):
             element = None
         return element
 
-    def _findElementsInRectangle(self, xTL, yTL, xBR, yBR, node, elements):
-        if len(node.children) > 0:
-            for child in node.children:
-                self._findElementsInRectangle(xTL, yTL, xBR, yBR, child, elements)
-        else:
-            elements.append(node)
+    # def _findElementsInRectangle(self, xTL, yTL, xBR, yBR, node, elements):
+    #     if len(node.children) > 0:
+    #         for child in node.children:
+    #             self._findElementsInRectangle(xTL, yTL, xBR, yBR, child, elements)
+    #     else:
+    #         elements.append(node)
         
+    # def findElementsInRectangle(self, xTL, yTL, xBR, yBR):
+    #     dx = self.root.dx/self.nx
+    #     dy = self.root.dy/self.ny
+    #     elements = []
+    #     for j in range(int(yTL/dy), int(yBR/dy)+1):
+    #         for i in range(int(xTL/dx), int(xBR/dx)+1):
+    #             n = j*self.nx+i
+    #             if n < self.nx*self.ny:
+    #                self._findElementsInRectangle(xTL, yTL, xBR, yBR, self.root.children[n], elements)
+    #     return elements
+
     def findElementsInRectangle(self, xTL, yTL, xBR, yBR):
-        dx = self.root.dx/self.nx
-        dy = self.root.dy/self.ny
+        # Precompute dx and dy, as they do not change
+        dx = self.root.dx / self.nx
+        dy = self.root.dy / self.ny
+        
+        # Precompute integer bounds for x and y axis
+        start_j = int(yTL / dy)
+        end_j = int(yBR / dy)
+        start_i = int(xTL / dx)
+        end_i = int(xBR / dx)
+        
         elements = []
-        for j in range(int(yTL/dy), int(yBR/dy)+1):
-            for i in range(int(xTL/dx), int(xBR/dx)+1):
-                n = j*self.nx+i
-                if n < self.nx*self.ny:
-                   self._findElementsInRectangle(xTL, yTL, xBR, yBR, self.root.children[n], elements)
+        
+        # Stack for iterative depth-first traversal of the tree
+        stack = []
+    
+        # Iterate over grid points
+        for j in range(start_j, end_j + 1):
+            for i in range(start_i, end_i + 1):
+                n = j * self.nx + i
+                if n < self.nx * self.ny:
+                    stack.append(self.root.children[n])
+        
+        # Now process the stack iteratively
+        while stack:
+            node = stack.pop()
+            
+            if len(node.children) > 0:
+                for child in node.children:
+                    stack.append(child)
+            else:
+                elements.append(node)
+        
         return elements
 
 from matplotlib.patches import Rectangle

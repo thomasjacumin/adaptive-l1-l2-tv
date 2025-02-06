@@ -39,21 +39,58 @@ def quadMeasure(quad):
 def computeBasisFunctionSupport(n):
   return [n.x-n.dx/2, n.x+n.dx/2, n.y-n.dy/2, n.y+n.dy/2]
 
+# def projectionMatrix(viewSrc, viewDst): 
+#   nodesSrc = viewSrc.getElements()
+#   nodesDst = viewDst.getElements()
+#   Mx = []
+#   My = []
+#   Mv = []
+#   for nDst in nodesDst:
+#     eDst = computeBasisFunctionSupport(nDst)
+#     nSrcInter = viewSrc.findElementsInRectangle(nDst.x-nDst.dx/2, nDst.y-nDst.dy/2, nDst.x+nDst.dx/2, nDst.y+nDst.dy/2) # can be faster by selecting less elements
+#     for nSrc in nSrcInter:
+#       eSrc = computeBasisFunctionSupport(nSrc)
+#       intersection = quadIntersection(eDst, eSrc)
+#       if quadMeasure(intersection) > 0:
+#         Mx.append(nDst.indice)
+#         My.append(nSrc.indice)
+#         Mv.append(quadMeasure(intersection)/quadMeasure(eDst))
+#   M = sparse.csr_matrix((Mv, (Mx, My)), shape=[len(nodesDst), len(nodesSrc)])
+#   return M
+
 def projectionMatrix(viewSrc, viewDst): 
-  nodesSrc = viewSrc.getElements()
-  nodesDst = viewDst.getElements()
-  Mx = []
-  My = []
-  Mv = []
-  for nDst in nodesDst:
-    eDst = computeBasisFunctionSupport(nDst)
-    nSrcInter = viewSrc.findElementsInRectangle(nDst.x-nDst.dx/2, nDst.y-nDst.dy/2, nDst.x+nDst.dx/2, nDst.y+nDst.dy/2) # can be faster by selecting less elements
-    for nSrc in nSrcInter:
-      eSrc = computeBasisFunctionSupport(nSrc)
-      intersection = quadIntersection(eDst, eSrc)
-      if quadMeasure(intersection) > 0:
-        Mx.append(nDst.indice)
-        My.append(nSrc.indice)
-        Mv.append(quadMeasure(intersection)/quadMeasure(eDst))
-  M = sparse.csr_matrix((Mv, (Mx, My)), shape=[len(nodesDst), len(nodesSrc)])
-  return M
+    nodesSrc = viewSrc.getElements()
+    nodesDst = viewDst.getElements()
+    
+    Mx, My, Mv = [], [], []
+    
+    # Cache basis function supports for both source and destination
+    basisDst = [computeBasisFunctionSupport(nDst) for nDst in nodesDst]
+    basisSrc = [computeBasisFunctionSupport(nSrc) for nSrc in nodesSrc]
+
+    # To optimize the selection of nodes within a region, we can compute a spatial index.
+    # However, in this example, we'll keep the existing logic, but be mindful of optimization here.
+
+    for i, nDst in enumerate(nodesDst):
+        eDst = basisDst[i]
+        
+        # Find elements in the rectangle region
+        nSrcInter = viewSrc.findElementsInRectangle(
+            nDst.x - nDst.dx / 2,
+            nDst.y - nDst.dy / 2,
+            nDst.x + nDst.dx / 2,
+            nDst.y + nDst.dy / 2
+        )
+        
+        for nSrc in nSrcInter:
+            eSrc = basisSrc[nSrc.indice]
+            intersection = quadIntersection(eDst, eSrc)
+            quadMeasure_intersection = quadMeasure(intersection)
+            if quadMeasure_intersection > 0:
+                Mx.append(nDst.indice)
+                My.append(nSrc.indice)
+                Mv.append(quadMeasure_intersection / quadMeasure(eDst))
+
+    # Construct sparse matrix
+    M = sparse.csr_matrix((Mv, (Mx, My)), shape=(len(nodesDst), len(nodesSrc)))
+    return M
