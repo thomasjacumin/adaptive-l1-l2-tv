@@ -9,9 +9,18 @@ import models
 import newton
 
 r = 1.5
-w = 512
+max_n = 13
+w = 2**max_n
 h = w
-theta_mark = 0.2
+
+# # Model
+# model = models.L1L2TVModel()
+# model.alpha1  = 1*np.ones(w*h)
+# model.alpha2  = 1*np.ones(w*h)
+# model.lambdaa = 1*np.ones(w*h)
+# model.beta    = 0*np.ones(w*h)
+# model.gamma1  = 2e-4*np.ones(w*h)
+# model.gamma2  = 2e-4*np.ones(w*h)
 
 # Model
 model = models.L1L2TVModel()
@@ -19,8 +28,8 @@ model.alpha1  = 1*np.ones(w*h)
 model.alpha2  = 1*np.ones(w*h)
 model.lambdaa = 1*np.ones(w*h)
 model.beta    = 0*np.ones(w*h)
-model.gamma1  = 2e-4*np.ones(w*h)
-model.gamma2  = 2e-4*np.ones(w*h)
+model.gamma1  = 1e-5*np.ones(w*h)
+model.gamma2  = 1e-5*np.ones(w*h)
 
 # Mesh
 viewExact = quadmesh.QuadMeshLeafView(6, 6, w, h)
@@ -35,8 +44,6 @@ for e in elements:
     if (e.x - 3)**2 + (e.y - 3)**2 <= r**2:
         f[e.indice] = 1
 
-max_n = int(np.log(w))
-
 # exact solution
 u_exact = np.zeros(dofs)
 if r < 1:
@@ -46,9 +53,7 @@ else:
 Image.fromarray( np.uint8(255*f).reshape([h,w]), 'L' ).save("results/convergence/f.png")
 Image.fromarray( np.uint8(255*u_exact).reshape([h,w]), 'L' ).save("results/convergence/u_exact.png")
 
-
-
-
+########################################
 
 list_dofs_unif = []
 list_error_unif = []
@@ -56,10 +61,10 @@ list_error_unif = []
 elements = viewExact.getElements()
 dofs = len(elements)
 
-algorithm = newton.L1L2TVNewtonDenoising(100, 1e-5)
+algorithm = newton.L1L2TVNewtonDenoising(10000, 1e-10)
 
 print(max_n)
-for n in range(2, max_n):
+for n in range(2, max_n-1):
     view = quadmesh.QuadMeshLeafView(6, 6, int(w/2**n), int(h/2**n))
     view.create()
     view.computeIndices()
@@ -97,10 +102,12 @@ for n in range(2, max_n):
     dofs_curr = len(elements_curr)
     list_dofs_unif.append(dofs_curr)
     list_error_unif.append(l2_error)
+    print(n, dofs_curr)
 
+######################################################
 
-
-
+theta_mark = 0.35
+N = max_n - 2
 
 def adaptMesh(view, err, model, u):
     elements = view.getElements()
@@ -136,9 +143,9 @@ def adaptMesh(view, err, model, u):
 list_dofs_ada = []
 list_error_ada = []
 
-algorithm = newton.L1L2TVNewtonDenoising(100, 1e-5)
+algorithm = newton.L1L2TVNewtonDenoising(10000, 1e-10)
 
-view = quadmesh.QuadMeshLeafView(6, 6, int(w/2**(max_n-1)), int(h/2**(max_n-1)))
+view = quadmesh.QuadMeshLeafView(6, 6, int(w/2**(N)), int(h/2**(N)))
 view.create()
 view.computeIndices()
 
@@ -156,8 +163,11 @@ g = P@f
 
 elements = viewExact.getElements()
 dofs = len(elements)
+mK = np.zeros(dofs)
+for e in elements:
+    mK[e.indice] = e.dx*e.dy
 
-for n in range(0, max_n):
+for n in range(0, N-1):
     elements_curr = view.getElements()
     dofs_curr = len(elements_curr)
 
@@ -169,19 +179,24 @@ for n in range(0, max_n):
     print(np.min(err), np.max(err), np.sum(err))
     err = err - np.min(err)
 
-    mK = np.zeros(dofs)
-    for e in elements:
-        mK[e.indice] = e.dx*e.dy
-        
+    print("compute l2 error...")    
     PInv = projection.projectionMatrix(view, viewExact)
+    # PInv_u = PInv@u
+    # PInv_g = PInv@g
+    # plt.imshow(u_exact.reshape([h,w]), cmap='gray')
+    # plt.colorbar()
+    # plt.show()
+    # plt.imshow(PInv_g.reshape([h,w]), cmap='gray')
+    # plt.colorbar()
+    # plt.show()
+    # plt.imshow(PInv_u.reshape([h,w]), cmap='gray')
+    # plt.colorbar()
+    # plt.show()
     l2_error = np.sqrt( np.sum( mK*(u_exact - PInv@u)**2 ) ) 
     print(l2_error)
-
-    elements_curr = view.getElements()
-    dofs_curr = len(elements_curr)
     list_dofs_ada.append(dofs_curr)
     list_error_ada.append(l2_error)
-
+    
     # Image.fromarray( np.uint8(255*PInv@u).reshape([h,w]), 'L' ).save("results/convergence/ada-"+str(n)+".png")
 
     print("adapt mesh...")
@@ -198,24 +213,28 @@ for n in range(0, max_n):
     g = P@f
 
 
-f = open("results/convergence/convergence.txt", "w")
-f.write(str(list_dofs_unif)+"\n")
-f.write(str(list_error_unif)+"\n")
 
-f.write(str(list_dofs_ada)+"\n")
-f.write(str(list_error_ada))
-f.close()
+#########################################
 
+guide1_x = np.linspace(list_dofs_unif[1], list_dofs_unif[len(list_dofs_unif)-1], 20)
+guide1_y = 1.8*np.power(guide1_x, -1/4)
+guide2_x = np.linspace(list_dofs_ada[0], list_dofs_ada[len(list_dofs_ada)-2], 20)
+guide2_y = 3*np.power(guide2_x, -1/2)
 
+plt.plot(guide1_x, guide1_y, 'k:', label=r"$\sharp dofs^{-1/4}$")
+plt.plot(guide2_x, guide2_y, 'k--', label=r"$\sharp dofs^{-1/2}$")
 
+plt.plot(list_dofs_unif[1:], list_error_unif[1:], 'x-', label="uniform")
+plt.plot(list_dofs_ada, list_error_ada, 'o-', label="adaptative")
 
+plt.ylim(0.1, 1)
+plt.xscale("log")
+plt.yscale("log")
+plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.4)
 
-plt.plot(np.log10(list_dofs_unif), list_error_unif, label="uniform")
-plt.plot(np.log10(list_dofs_ada), list_error_ada, label="adaptative")
-
-plt.xlabel("log(#dofs) ")
-plt.ylabel("$\\|u_\\text{exact} - u_h\\|_{L^2(\Omega)}$")
-plt.title("title")
+plt.xlabel(r"$\sharp dofs$")
+plt.ylabel(r"$\|u_\text{exact} - I_h u_h\|_{L^2(\Omega)}$")
+plt.title("convergence")
 plt.legend()
 plt.savefig('results/convergence/convergence.png')
 plt.show()
