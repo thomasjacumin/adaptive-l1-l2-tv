@@ -32,6 +32,7 @@ run() {
 }
 
 run__convergence() {
+    mkdir results/convergence
     python3 convergence.py
 }
 
