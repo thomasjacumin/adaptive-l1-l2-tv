@@ -13,15 +13,6 @@ max_n = 11
 w = 2**max_n
 h = w
 
-# # Model
-# model = models.L1L2TVModel()
-# model.alpha1  = 1*np.ones(w*h)
-# model.alpha2  = 1*np.ones(w*h)
-# model.lambdaa = 1*np.ones(w*h)
-# model.beta    = 0*np.ones(w*h)
-# model.gamma1  = 2e-4*np.ones(w*h)
-# model.gamma2  = 2e-4*np.ones(w*h)
-
 # Model
 model = models.L1L2TVModel()
 model.alpha1  = 1*np.ones(w*h)
@@ -163,7 +154,7 @@ for n in range(0, N-1):
     dofs_curr = len(elements_curr)
 
     print(n, dofs_curr)
-    #quadmesh.showQMeshFunction(view, np.ones(dofs_curr), pathname="results/convergence/mesh-"+str(n)+".png")
+    # quadmesh.showQMeshFunction(view, np.ones(dofs_curr), pathname="results/convergence/noiseless-mesh-"+str(n)+".png")
     
     algorithm.init(view, g, model_approx)
     [u, p1, p2, err] = algorithm.run()

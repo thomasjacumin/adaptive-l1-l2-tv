@@ -181,7 +181,7 @@ class L1L2TVNewtonDenoising(object):
                     break
                 bar.text("stopping criterion: "+str(residual_l2)+" min: "+str(min_residual_l2))
                 bar()
-        print(f"Residual {residual_l2}")
+        print(f"Residual: {residual_l2}")
         u = min_u
         p1 = min_p1
         p2 = min_p2
@@ -440,8 +440,9 @@ class L1L2TVNewtonOpticalFlow(object):
                 if residual_l2 < self.epsilon:
                     break
                     
-                bar.text("stopping criterion: "+str(residual_l2))
+                bar.text("stopping criterion: "+str(residual_l2)+" min: "+str(min_residual_l2))
                 bar()
+        print(f"Residual: {residual_l2}")
         u = min_u
         p1 = min_p1
         p2 = min_p2

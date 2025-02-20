@@ -102,7 +102,7 @@ class DenoisingCoarseToFineRunner(object):
         p1_0 = None
         p2_0 = None
         while True:                  
-            # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/denoising/mesh-"+str(n)+".png")
+            # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/denoising/denoising-mesh-"+str(n)+".png")
             
             print("dofs: "+str(dofs)+" ("+str(100*dofs/self.w/self.h)+")")
             print("run algorithm...")
@@ -300,7 +300,7 @@ class AllInOneRunner(object):
                 dofs = len(elements)        
 
                 print("dofs: "+str(dofs)+" ("+str(100*dofs/w/h)+"%)")
-                # quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/mesh-"+str(NRef)+".png")
+                quadmesh.showQMeshFunction(view, np.ones(dofs), pathname="results/optical-flow/flow-mesh-"+str(NRef)+".png")
     
                 print("compute projections...")
                 P = projection.projectionMatrix(viewImage, view)
