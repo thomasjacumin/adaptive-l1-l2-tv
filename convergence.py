@@ -264,7 +264,6 @@ plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.4)
 
 plt.xlabel(r"$\sharp dofs$")
 plt.ylabel(r"$\|u_\text{exact} - I_h u_h\|_{L^2(\Omega)}$")
-plt.title("convergence")
 plt.legend()
-plt.savefig('results/convergence/convergence.png')
+plt.savefig('results/convergence/convergence.png', bbox_inches='tight', dpi=300)
 plt.show()
